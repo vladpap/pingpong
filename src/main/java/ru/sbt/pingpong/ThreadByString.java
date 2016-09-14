@@ -1,21 +1,31 @@
 package ru.sbt.pingpong;
 
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Semaphore;
 
 public class ThreadByString extends Thread {
-    private final ReentrantLock locker;
+    private final Semaphore semaphoreOne, semaphoreTwo;
     private volatile boolean isRunning = true;
 
-    public ThreadByString(String name, ReentrantLock locker) {
-        this.locker = locker;
+    public ThreadByString(String name, Semaphore semaphoreOne, Semaphore semaphoreTwo) {
         super(name);
+        this.semaphoreOne = semaphoreOne;
+        this.semaphoreTwo = semaphoreTwo;
     }
 
     @Override
     public void run() {
         while (isRunning) {
-            locker.lock();
+            try {
+                semaphoreOne.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             System.out.println(Thread.currentThread().getName());
+            semaphoreTwo.release();
         }
+    }
+
+    public void terminate() {
+        isRunning = false;
     }
 }
